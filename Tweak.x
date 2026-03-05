@@ -1,47 +1,27 @@
 #import <CoreLocation/CoreLocation.h>
-#import <math.h>
 
-// دالة لتوليد ضجيج يتبع التوزيع الطبيعي (Gaussian)
-double generateGaussianNoise(double mean, double stdDev) {
-    static double z1;
-    static BOOL generate = NO;
-    generate = !generate;
-
-    if (!generate) return z1 * stdDev + mean;
-
-    double u1, u2;
-    do {
-        u1 = (double)arc4random() / 0xFFFFFFFFu;
-        u2 = (double)arc4random() / 0xFFFFFFFFu;
-    } while (u1 <= 1e-7);
-
-    double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
-    z1 = sqrt(-2.0 * log(u1)) * sin(2.0 * M_PI * u2);
-    return z0 * stdDev + mean;
-}
+// متغيرات ثابتة لحفظ حالة الموقع (لجعل القراءة تعتمد على ما قبلها)
+static double lastLatOffset = 0;
+static double lastLonOffset = 0;
 
 %hook CLLocation
 
 - (CLLocationCoordinate2D)coordinate {
-    // إحداثياتك المستهدفة في القصيم
-    double baseLat = 26.355237;
+    // إحداثيات القصيم
+    double baseLat = 26.355237; 
     double baseLon = 43.955600;
 
-    // إضافة ضجيج غاوسي بانحراف معياري صغير جداً (0.00001)
-    // هذا يجعل البيانات تتبع توزيع "الجرس" الطبيعي بدلاً من التوزيع الموحد
-    double latNoise = generateGaussianNoise(0, 0.00001);
-    double lonNoise = generateGaussianNoise(0, 0.00001);
+    // محاكاة "السير العشوائي" (Random Walk)
+    // نغير الموقع بمقدار ضئيل جداً بناءً على آخر موقع
+    double step = 0.000005; 
+    lastLatOffset += (((double)arc4random() / 0xFFFFFFFFu) * step * 2) - step;
+    lastLonOffset += (((double)arc4random() / 0xFFFFFFFFu) * step * 2) - step;
 
-    return CLLocationCoordinate2DMake(baseLat + latNoise, baseLon + lonNoise);
-}
+    // وضع حدود (Boundaries) لكي لا يبتعد الموقع كثيراً عن المكتب
+    if (fabs(lastLatOffset) > 0.00005) lastLatOffset *= 0.9;
+    if (fabs(lastLonOffset) > 0.00005) lastLonOffset *= 0.9;
 
-- (CLLocationAccuracy)horizontalAccuracy {
-    // محاكاة تغير الدقة بشكل طبيعي أيضاً
-    return generateGaussianNoise(7.0, 1.5); 
-}
-
-- (NSDate *)timestamp {
-    return [NSDate date];
+    return CLLocationCoordinate2DMake(baseLat + lastLatOffset, baseLon + lastLonOffset);
 }
 
 %end
