@@ -14,6 +14,7 @@ jobs:
 
       - name: Setup Theos & iOS SDK
         run: |
+          brew install ldid
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           rm -rf $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks
