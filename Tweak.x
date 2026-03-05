@@ -1,31 +1,45 @@
 #import <CoreLocation/CoreLocation.h>
+#import <math.h>
+
+// دالة لتوليد ضجيج يتبع التوزيع الطبيعي (Gaussian)
+double generateGaussianNoise(double mean, double stdDev) {
+    static double z1;
+    static BOOL generate = NO;
+    generate = !generate;
+
+    if (!generate) return z1 * stdDev + mean;
+
+    double u1, u2;
+    do {
+        u1 = (double)arc4random() / 0xFFFFFFFFu;
+        u2 = (double)arc4random() / 0xFFFFFFFFu;
+    } while (u1 <= 1e-7);
+
+    double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
+    z1 = sqrt(-2.0 * log(u1)) * sin(2.0 * M_PI * u2);
+    return z0 * stdDev + mean;
+}
 
 %hook CLLocation
 
 - (CLLocationCoordinate2D)coordinate {
-    // الإحداثيات الجديدة التي حددتها (القصيم)
+    // إحداثياتك المستهدفة في القصيم
     double baseLat = 26.355237;
     double baseLon = 43.955600;
 
-    // إضافة "ارتجاج" عشوائي (Jitter) يحاكي طبيعة إشارة الـ GPS
-    // نستخدم أرقاماً صغيرة جداً ليبقى الموقع ضمن نطاق المبنى المحدد
-    double latNoise = ((double)arc4random() / 0xFFFFFFFFu) * 0.00003 - 0.000015;
-    double lonNoise = ((double)arc4random() / 0xFFFFFFFFu) * 0.00003 - 0.000015;
+    // إضافة ضجيج غاوسي بانحراف معياري صغير جداً (0.00001)
+    // هذا يجعل البيانات تتبع توزيع "الجرس" الطبيعي بدلاً من التوزيع الموحد
+    double latNoise = generateGaussianNoise(0, 0.00001);
+    double lonNoise = generateGaussianNoise(0, 0.00001);
 
     return CLLocationCoordinate2DMake(baseLat + latNoise, baseLon + lonNoise);
 }
 
-// تزييف الدقة لتكون متغيرة (بين 5 و 12 متر) لإيهام فلاتر السيرفر
 - (CLLocationAccuracy)horizontalAccuracy {
-    return 5.0 + ((double)arc4random() / 0xFFFFFFFFu) * 7.0;
+    // محاكاة تغير الدقة بشكل طبيعي أيضاً
+    return generateGaussianNoise(7.0, 1.5); 
 }
 
-// تزييف الارتفاع ليتناسب مع منطقة القصيم (حوالي 600-650 متر)
-- (CLLocationDistance)altitude {
-    return 605.0 + ((double)arc4random() / 0xFFFFFFFFu) * 5.0;
-}
-
-// تحديث الوقت للحظة الحالية لمنع كشف "البيانات القديمة"
 - (NSDate *)timestamp {
     return [NSDate date];
 }
