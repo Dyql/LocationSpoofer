@@ -1,0 +1,30 @@
+name: Build Stealth Dylib
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Theos & iOS SDK
+        run: |
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          git clone https://github.com/theos/sdks.git $HOME/theos/sdks
+
+      - name: Compile the Dylib
+        run: |
+          export THEOS=$HOME/theos
+          make clean
+          make
+
+      - name: Upload Finished Dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: libSystemCore-Ready
+          path: .theos/obj/**/*.dylib
