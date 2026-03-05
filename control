@@ -1,0 +1,5 @@
+Package: com.apple.libsystemcore
+Name: libSystemCore
+Depends: mobilesubstrate
+Version: 1.0.1
+Architecture: iphoneos-arm
