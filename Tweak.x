@@ -4,7 +4,7 @@
 
 - (CLLocationCoordinate2D)coordinate {
     // الإحداثيات الوهمية
-    return CLLocationCoordinate2DMake(24.7136, 46.6753); 
+    return CLLocationCoordinate2DMake(26.355237, 43.955600); 
 }
 
 %end
