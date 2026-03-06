@@ -1,23 +1,22 @@
-#import <UIKit/UIKit.h>
+#import <substrate.h>
+#import <mach-o/dyld.h>
 
-// ملاحظة: استبدل 'GameManager' و 'spendGold' بالأسماء الحقيقية التي استخرجتها من التحليل
-%hook GameManager
+// تعريف الدالة القديمة لكي نتمكن من استدعائها لاحقاً
+static void (*old_updateCurrency)(void *instance, int amount);
 
-- (void)spendGold:(int)amount {
-    // إذا كانت اللعبة ترسل القيمة كـ (موجب) ليتم طرحها داخلياً
-    // سنقوم بتمريرها كـ (سالب) لعلّ وعسى أن يؤدي ذلك لعملية جمع (رياضيات: - - = +)
-    if (amount > 0) {
-        int reversedAmount = -amount;
-        %orig(reversedAmount);
-    } else {
-        %orig(amount);
+// الدالة الجديدة التي ستحل محل الأصلية
+void new_updateCurrency(void *instance, int amount) {
+    if (amount < 0) {
+        amount *= -1; // تحويل الخصم إلى إضافة
     }
+    // تنفيذ الدالة الأصلية لكن بالقيمة المعدلة
+    old_updateCurrency(instance, amount);
 }
 
-// أو إذا كانت هناك دالة تحديث عامة:
-- (void)updateBalance:(int)newAmount {
-    // نضاعف أي زيادة تطرأ على الرصيد
-    %orig(newAmount * 2);
+%ctor {
+    // 0x123456 يجب أن يستبدل بـ Offset الدالة من Ghidra
+    unsigned long targetAddress = _dyld_get_image_vmaddr_slide(0) + 0x123456;
+    
+    // عملية الـ Hooking المباشرة في الذاكرة
+    MSHookFunction((void *)targetAddress, (void *)new_updateCurrency, (void **)&old_updateCurrency);
 }
-
-%end
