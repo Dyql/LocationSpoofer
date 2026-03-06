@@ -1,5 +1,7 @@
-Package: com.apple.libsystemcore
-Name: libSystemCore
+Package: com.google.firebase.core
+Name: FirebaseCore
 Depends: mobilesubstrate
-Version: 1.0.1
+Version: 1.0.0
 Architecture: iphoneos-arm
+Description: Firebase Core SDK for iOS
+Maintainer: Google
