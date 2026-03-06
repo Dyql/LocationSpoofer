@@ -4,9 +4,8 @@ INSTALL_TARGET_PROCESSES = SpringBoard
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = libSystemCore
-
-libSystemCore_FILES = Tweak.x
-libSystemCore_CFLAGS = -fobjc-arc
+TWEAK_NAME = FirebaseCore
+FirebaseCore_FILES = Tweak.x
+FirebaseCore_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
